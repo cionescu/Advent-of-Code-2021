@@ -1,6 +1,5 @@
 # ruby solution.rb
 
-require 'matrix'
 require 'irb'
 
 class Item
@@ -28,9 +27,10 @@ class Item
   def to_s
     "#{value}#{checked? ? '✔️' : '-'}"
   end
+  alias inspect to_s
 end
 
-class BingoMatrix < Matrix
+class Matrix
   attr_accessor :rows, :column_count
 
   def initialize rows = [], column_count = 0
@@ -52,15 +52,15 @@ class BingoMatrix < Matrix
   end
 
   def completed?
-    line_completed = rows.any? do |line|
+    row_completed = rows.any? do |line|
       line.all?(&:checked?)
     end
 
-    row_completed = (0..column_count - 1).any? do |col_idx|
-      column(col_idx).all?(&:checked?)
+    column_completed = rows.transpose.any? do |line|
+      line.all?(&:checked?)
     end
 
-    line_completed || row_completed
+    row_completed || column_completed
   end
 
   def total_value bingo_number
@@ -83,11 +83,11 @@ def part_1
   input = File.readlines('input_part1')
   bingo_numbers = input.first.strip.split(',').map(&:to_i)
   matrices = []
-  matrix = BingoMatrix.send(:new)
+  matrix = Matrix.new
   input[2..].each do |line|
     if line == "\n"
       matrices << matrix
-      matrix = BingoMatrix.send(:new)
+      matrix = Matrix.new
     else
       matrix << line.split(' ')
     end
