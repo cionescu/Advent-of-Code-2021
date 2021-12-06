@@ -10,7 +10,7 @@ class Item
     @checked = checked
   end
 
-  def selected number
+  def selected! number
     if number == value
       self.checked = true
     end
@@ -31,11 +31,12 @@ class Item
 end
 
 class Matrix
-  attr_accessor :rows, :column_count
+  attr_accessor :rows, :column_count, :completed
 
   def initialize rows = [], column_count = 0
     @rows = []
     @column_count = 0
+    @completed = false
   end
 
   def << line
@@ -46,12 +47,14 @@ class Matrix
   def number_selected number
     rows.each do |line|
       line.each do |item|
-        item.selected(number)
+        item.selected!(number)
       end
     end
   end
 
   def completed?
+    return true if completed
+
     row_completed = rows.any? do |line|
       line.all?(&:checked?)
     end
@@ -60,7 +63,18 @@ class Matrix
       line.all?(&:checked?)
     end
 
-    row_completed || column_completed
+    return unless row_completed || column_completed
+
+    completed!
+    true
+  end
+
+  def completed!
+    @completed = true
+  end
+
+  def incomplete?
+    !@completed
   end
 
   def total_value bingo_number
@@ -79,9 +93,11 @@ class Matrix
   end
 end
 
-def part_1
-  input = File.readlines('input_part1')
+def read_and_load_matrices file_path
+  input = File.readlines file_path
+
   bingo_numbers = input.first.strip.split(',').map(&:to_i)
+
   matrices = []
   matrix = Matrix.new
   input[2..].each do |line|
@@ -92,6 +108,12 @@ def part_1
       matrix << line.split(' ')
     end
   end
+
+  [bingo_numbers, matrices]
+end
+
+def part_1
+  bingo_numbers, matrices = read_and_load_matrices('input_part1')
 
   bingo_numbers.each do |number|
     puts "----------------- #{number} --------------------"
@@ -108,5 +130,22 @@ def part_1
   end
 end
 
-# puts "Part1: #{part_1}"
-part_1
+def part_2
+  bingo_numbers, matrices = read_and_load_matrices('input_part1')
+
+  bingo_numbers.each do |number|
+    if matrices.count(&:completed?) == matrices.count - 1
+      matrix = matrices.detect(&:incomplete?)
+      matrix.number_selected(number)
+
+      if matrix.completed?
+        puts matrix.total_value(number)
+      end
+    else
+      matrices.each{ |matrix| matrix.number_selected(number) }
+    end
+  end
+end
+
+# part_1
+part_2
